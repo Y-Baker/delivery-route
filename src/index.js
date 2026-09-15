@@ -1,15 +1,20 @@
-import { parseCsv, MAX_CAPACITY } from './parser.js';
+import { parseCsv, parseZonesCsv, MAX_CAPACITY } from './parser.js';
 import processTrips from './logic.js';
+
+const ZONES_FILE_PATH = 'data/zones.csv';
 
 const main = () => {
   const args = process.argv.slice(2);
-  const filePath = args[0] || 'data/sample.csv';
+  const isZoneMode = args.includes('--zone');
+  const filePath = args.find(arg => !arg.startsWith('--')) || 'data/sample.csv';
 
   console.log('==================================================');
-  console.log('             DELIVERY ROUTE logic               ');
+  console.log('             DELIVERY ROUTE PLANNER               ');
   console.log('==================================================');
   console.log(`Input File:       ${filePath}`);
+  console.log(`Zone Clustering:  ${isZoneMode ? `Enabled (${ZONES_FILE_PATH})` : 'Disabled (Strict Single-Area)'}`);
 
+  // Parse input deliveries
   let parseResult;
   try {
     parseResult = parseCsv(filePath);
@@ -19,6 +24,17 @@ const main = () => {
   }
 
   const { deliveries, warnings } = parseResult;
+
+  // If zone mode enabled, parse fixed zones configuration
+  let areaToRegion = new Map();
+  if (isZoneMode) {
+    try {
+      areaToRegion = parseZonesCsv(ZONES_FILE_PATH);
+    } catch (err) {
+      console.error(`\n[Error loading zones] ${err.message}`);
+      process.exit(1);
+    }
+  }
 
   if (warnings.length > 0) {
     console.log('\nValidation Warnings:');
@@ -39,7 +55,7 @@ const main = () => {
     process.exit(0);
   }
 
-  const trips = processTrips(deliveries);
+  const trips = processTrips(deliveries, MAX_CAPACITY, areaToRegion);
 
   console.log('\nTRIPS:\n');
 
@@ -49,11 +65,19 @@ const main = () => {
     totalDeliveredWeight += trip.totalWeight;
     const utilization = ((trip.totalWeight / MAX_CAPACITY) * 100).toFixed(1);
 
-    console.log(`Trip ${trip.tripNumber}: ${trip.area}`);
+    const areasLabel =
+      trip.areas && trip.areas.length > 1
+        ? `${trip.region} [${trip.areas.join(', ')}]`
+        : trip.areas && trip.areas.length === 1
+        ? trip.areas[0]
+        : trip.region;
+
+    console.log(`Trip ${trip.tripNumber}: ${areasLabel}`);
     console.log(`  Total Weight: ${trip.totalWeight.toFixed(1)} kg / ${MAX_CAPACITY} kg (${utilization}% utilization)`);
     console.log(`  Packages (${trip.packages.length}):`);
     for (const pkg of trip.packages) {
-      console.log(`    • ID: ${pkg.id.padEnd(4)} | Priority: ${pkg.priority} | Weight: ${pkg.weight.toFixed(1)} kg`);
+      const areaNote = trip.areas && trip.areas.length > 1 ? ` (${pkg.area})` : '';
+      console.log(`    • ID: ${pkg.id.padEnd(4)} | Priority: ${pkg.priority} | Weight: ${pkg.weight.toFixed(1)} kg${areaNote}`);
     }
     console.log('');
   }
@@ -67,6 +91,6 @@ const main = () => {
   console.log(`Total Weight Delivered:   ${totalDeliveredWeight.toFixed(1)} kg`);
   console.log(`Avg Capacity Utilization: ${avgUtilization.toFixed(1)}%`);
   console.log('==================================================');
-}
+};
 
 main();

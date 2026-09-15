@@ -1,6 +1,6 @@
 import { PriorityQueue } from '@datastructures-js/priority-queue';
 
-const processTrips = (deliveries, maxCapacity = 10.0) => {
+const processTrips = (deliveries, maxCapacity = 10.0, areaToRegion = new Map()) => {
   if (!deliveries || deliveries.length === 0) {
     return [];
   }
@@ -18,13 +18,17 @@ const processTrips = (deliveries, maxCapacity = 10.0) => {
   for (const delivery of deliveries) {
     pq.push(delivery);
 
-    if (!areaMap.has(delivery.area)) {
-      areaMap.set(delivery.area, []);
+
+    const region = areaToRegion.get(delivery.area) || delivery.area;
+    delivery.region = region;
+
+    if (!areaMap.has(region)) {
+      areaMap.set(region, []);
     }
-    areaMap.get(delivery.area).push(delivery);
+    areaMap.get(region).push(delivery);
   }
 
-  // Sort deliveries within each area
+  // Sort deliveries within each region
   for (const list of areaMap.values()) {
     list.sort((a, b) => {
       if (a.priority !== b.priority) return a.priority - b.priority;
@@ -33,10 +37,10 @@ const processTrips = (deliveries, maxCapacity = 10.0) => {
     });
   }
 
-  // Setup Area Pointers (to keep track of the last visited index in each area)
+  // Setup Area Pointers (to keep track of the last visited index in each region)
   const areaPointers = new Map();
-  for (const area of areaMap.keys()) {
-    areaPointers.set(area, 0);
+  for (const region of areaMap.keys()) {
+    areaPointers.set(region, 0);
   }
 
   const trips = [];
@@ -51,9 +55,9 @@ const processTrips = (deliveries, maxCapacity = 10.0) => {
 
     if (!top || top.delivered) break;
 
-    const targetArea = top.area;
-    const areaList = areaMap.get(targetArea);
-    let ptr = areaPointers.get(targetArea);
+    const targetRegion = top.region;
+    const areaList = areaMap.get(targetRegion);
+    let ptr = areaPointers.get(targetRegion);
 
     const tripPackages = [top];
     top.delivered = true;
@@ -68,31 +72,34 @@ const processTrips = (deliveries, maxCapacity = 10.0) => {
         continue;
       }
 
-      if (tripWeight + candidate.weight <= maxCapacity) {
+      const newWeight = tripWeight + candidate.weight;
+      if (newWeight <= maxCapacity) {
         tripPackages.push(candidate);
         candidate.delivered = true;
-        tripWeight += candidate.weight;
+        tripWeight = newWeight;
         ptr++;
       } else {
-        // never skip a package if it not fits to avoid 
+        // never skip a package if it not fits to avoid:
         // 1) rescanning the whole list (O(N^2))
         // 2) leaving a package without delivery (constraint violated)
         break;
       }
     }
 
-    areaPointers.set(targetArea, ptr);
+    areaPointers.set(targetRegion, ptr);
 
     if (tripPackages.length > 0) {
+      const distinctAreas = [...new Set(tripPackages.map(p => p.area))];
       trips.push({
         tripNumber: trips.length + 1,
-        area: targetArea,
+        region: targetRegion,
+        areas: distinctAreas,
         totalWeight: tripWeight,
         packages: tripPackages
       });
     }
   }
   return trips;
-}
+};
 
 export default processTrips;

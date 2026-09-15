@@ -92,6 +92,37 @@ const parseCsv = (filePath) => {
   }
 
   return { deliveries, warnings };
-}
+};
 
-export {parseCsv, MAX_CAPACITY};
+const parseZonesCsv = (filePath) => {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Zones configuration file not found at path: ${filePath}`);
+  }
+
+  const rawContent = fs.readFileSync(filePath, 'utf-8').trim();
+  if (rawContent.length === 0) {
+    return new Map();
+  }
+
+  const areaToRegion = new Map();
+
+  const lines = rawContent.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+
+  for (const line of lines) {
+    const areas = line
+      .split(',')
+      .map(a => a.trim().replace(/^["']|["']$/g, ''))  // regex remove quotes
+      .filter(a => a.length > 0);
+
+    if (areas.length > 0) {
+      const regionName = `${areas[0]} Cluster`;
+      for (const area of areas) {
+        areaToRegion.set(area, regionName);
+      }
+    }
+  }
+
+  return areaToRegion;
+};
+
+export { parseCsv, parseZonesCsv, MAX_CAPACITY };
