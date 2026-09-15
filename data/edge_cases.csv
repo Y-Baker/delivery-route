@@ -1,0 +1,15 @@
+ID,Area,Priority,Package Weight (kg)
+101,Heliopolis,1,6.0
+102,Heliopolis,1,5.0
+103,Heliopolis,1,4.0
+201,Downtown,1,12.5
+202,Downtown,-1,3.0
+203,Downtown,2,-4.0
+204,Downtown,abc,3.0
+205,Downtown,2,xyz
+206,,2,3.0
+207,Downtown,2,2.0
+207,Downtown,2,3.0
+301,Dokki,2,4.0
+302,Dokki,2,2.0
+303,Dokki,2,7.0
