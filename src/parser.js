@@ -72,10 +72,10 @@ const parseCsv = (filePath) => {
       continue;
     }
 
-    // Edge Case: Package weight > 10.0 kg
-    if (weight > 10.0) {
+    // Edge Case: Package weight > MAX_CAPACITY
+    if (weight > MAX_CAPACITY) {
       warnings.push(
-        `Line ${rowNumber} (ID ${rawId}): Package weight ${weight.toFixed(1)} kg exceeds maximum vehicle capacity (10.0 kg). Skipping.`
+        `Line ${rowNumber} (ID ${rawId}): Package weight ${weight.toFixed(1)} kg exceeds maximum vehicle capacity (${MAX_CAPACITY} kg). Skipping.`
       );
       continue;
     }
