@@ -42,7 +42,6 @@ ID,Area,Priority,Package Weight (kg)
 5,Maadi,2,3.5
 ```
 
-- **Header detection**: Case-insensitive matching for `ID`, `Area`, `Priority`, and `Weight`.
 - **Validation**:
   - `Priority`: Positive integer (`1` = most urgent, `2` = next).
   - `Weight`: Positive number $\le 10.0$ kg (the vehicle's physical limit).
